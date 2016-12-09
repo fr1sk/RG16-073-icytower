@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include <time.h>
 #include <GL/glut.h>
@@ -45,7 +46,7 @@ int main(int argc, char **argv)
 
     glClearColor(0, 0.6, 0.544, 0);
     glEnable(GL_DEPTH_TEST);
-
+    printf("Input debug:\n");
     //main loop
     glutMainLoop();
 
@@ -66,10 +67,12 @@ void test(){
 
 void moveLeft(){
     currentX -= MOVEMENTSPEED;
+    printf("\ta - move left\n");
 }
 
 void moveRight(){
     currentX += MOVEMENTSPEED;
+    printf("\td - move right\n");
 }
 
 void jump(){
@@ -114,6 +117,7 @@ static void onKeyboard(unsigned char key, int x, int y)
     case 'o':
     case 'O':
         //start game
+        printf("\to - start game\n");
         if (!animation_ongoing) {
             glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_ID);
             animation_ongoing = 1;
@@ -122,6 +126,7 @@ static void onKeyboard(unsigned char key, int x, int y)
 
     case 'p':
     case 'P':
+        printf("\tp - pause game\n");
         //pause game
         animation_ongoing = 0;
         break;
