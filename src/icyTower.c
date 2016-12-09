@@ -4,8 +4,8 @@
 #include <GL/glut.h>
 
 #define TIMER_ID 0
-#define TIMER_INTERVAL 30
-#define MOVEMENTSPEED 0.05
+#define TIMER_INTERVAL 25
+#define MOVEMENTSPEED 0.03
 
 struct point{
     int x,y;
@@ -18,7 +18,9 @@ static int animation_ongoing;   //animation flag
 static bool left = false;
 static bool right = false;
 
-static void on_keyboard(unsigned char key, int x, int y);
+static void onKeyboard(unsigned char key, int x, int y);
+static void onKeyboard2(unsigned char key, int x, int y);
+
 static void on_timer(int value);
 static void on_display(void);
 
@@ -34,7 +36,8 @@ int main(int argc, char **argv)
     glutInitWindowPosition(100, 100);
     glutCreateWindow(argv[0]);
 
-    glutKeyboardUpFunc(on_keyboard);
+    glutKeyboardFunc(onKeyboard);
+    glutKeyboardUpFunc(onKeyboard2);
     glutDisplayFunc(on_display);
 
     srand(time(NULL));
@@ -92,8 +95,15 @@ void jump(){
 
     vectorSpeedY -= .01;
 }
+static void onKeyboard2(unsigned char key, int x, int y){
+    if(key=='d' || key=='D'){
+        right=false;
+    } else if(key=='a' || key=='A'){
+        left=false;
+    }
+}
 
-static void on_keyboard(unsigned char key, int x, int y)
+static void onKeyboard(unsigned char key, int x, int y)
 {
     switch (key) {
     case 27:
@@ -145,15 +155,13 @@ static void on_timer(int value)
         return;
 
     jump();
-    
+
 
     if(left){
-        left=false;
         moveLeft();
     }
 
     if(right){
-        right=false;
         moveRight();
     }
 
@@ -176,13 +184,12 @@ static void on_display(void)
     glColor3ub(255, 193, 7);
     glBegin(GL_POLYGON);
 
-        glVertex3f(currentX - size / 2, currentY - size / 2, 0);
-        glVertex3f(currentX + size / 2, currentY - size / 2, 0);
-        glVertex3f(currentX + size / 2, currentY + size / 2, 0);
-        glVertex3f(currentX - size / 2, currentY + size / 2, 0);
+        glVertex3f(currentX - size , currentY - size , 0);
+        glVertex3f(currentX + size , currentY - size , 0);
+        glVertex3f(currentX + size , currentY + size , 0);
+        glVertex3f(currentX - size , currentY + size , 0);
     glEnd();
 
 
     glutSwapBuffers();
 }
-
