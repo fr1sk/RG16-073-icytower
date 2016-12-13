@@ -98,6 +98,17 @@ void jump(){
 
     vectorSpeedY -= .01;
 }
+
+void throughWall(){
+  if(currentX < -0.94){
+    currentX = 0.94;
+  }
+
+  if(currentX > 0.94){
+    currentX = -0.94;
+  }
+}
+
 static void onKeyboard2(unsigned char key, int x, int y){
     if(key=='d' || key=='D'){
         right=false;
@@ -160,8 +171,9 @@ static void on_timer(int value)
         return;
 
     jump();
+    throughWall();
 
-
+    //printf("x=%f  y=%f",currentX, currentY);
     if(left){
         moveLeft();
     }
