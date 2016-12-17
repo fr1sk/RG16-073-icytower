@@ -6,18 +6,21 @@
 
 #define TIMER_ID 0
 #define TIMER_INTERVAL 25
-#define MOVEMENTSPEED 0.03
+#define MOVEMENTSPEED 0.3
+
 
 struct point{
     int x,y;
 };
 
-const static float size = 0.1;  //size of object
+
 static float currentX, currentY;    //current object coordinates
 static float vectorSpeedX, vectorSpeedY;   //speed vector coords
 static int animation_ongoing;   //animation flag
 static bool left = false;
 static bool right = false;
+static float border = 8.4;
+static float borderTrough = 8.39;
 
 static void onKeyboard(unsigned char key, int x, int y);
 static void onKeyboard2(unsigned char key, int x, int y);
@@ -57,13 +60,13 @@ int myRandom(int m) {
 	return rand()%m;
 
 }
-void test(){
-    currentX = -(1 - size / 2) + (2 - size);
-    currentY = -(1 - size / 2) + (2 - size);
-
-    vectorSpeedX = -size / 2 + size * MOVEMENTSPEED;
-    vectorSpeedY = -size / 2 + size * MOVEMENTSPEED;
-}
+// void test(){
+//     currentX = -(1 - size / 2) + (2 - size);
+//     currentY = -(1 - size / 2) + (2 - size);
+//
+//     vectorSpeedX = -size / 2 + size * MOVEMENTSPEED;
+//     vectorSpeedY = -size / 2 + size * MOVEMENTSPEED;
+// }
 
 void moveLeft(){
     currentX -= MOVEMENTSPEED;
@@ -76,37 +79,33 @@ void moveRight(){
 }
 
 void jump(){
-    if (currentX <= -(1 - size / 2)) {
-        vectorSpeedX *= -1;
-        currentX = -(1 - size / 2);
-    }
-    if (currentX >= 1 - size / 2) {
-        vectorSpeedX *= -1;
-        currentX = 1 - size / 2;
-    }
-
     currentY += vectorSpeedY;
-    if (currentY <= -(1 - size / 2)) {
+    if (currentY <= -(6)) {
+        currentY = -6;
         vectorSpeedY *= -1;
-        currentY = -(1 - size / 2);
     }
-
-    if (currentY >= 1 - size / 2) {
-        vectorSpeedY *= -1;
-        currentY = 1 - size / 2;
+    else{
+        vectorSpeedY -= 0.06;
     }
-
-    vectorSpeedY -= .01;
 }
 
 void throughWall(){
-  if(currentX < -0.94){
-    currentX = 0.94;
+  if(currentX < -borderTrough){
+    currentX = borderTrough;
   }
 
-  if(currentX > 0.94){
-    currentX = -0.94;
+  if(currentX > borderTrough){
+    currentX = -borderTrough;
   }
+}
+
+void drawPlatform(){
+    #define glutCube glutWireCube
+    glPushMatrix();
+    glScalef(0.2, 1, 1);
+    glutCube(1);
+    glPopMatrix();
+    #undef glutCube
 }
 
 static void onKeyboard2(unsigned char key, int x, int y){
@@ -173,6 +172,7 @@ static void on_timer(int value)
     jump();
     throughWall();
 
+
     //printf("x=%f  y=%f",currentX, currentY);
     if(left){
         moveLeft();
@@ -194,18 +194,35 @@ static void on_timer(int value)
 
 static void on_display(void)
 {
-
+    //start for jumping cube
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    gluLookAt(15,0,0,0,0,0,0,1,0);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(60, 1, 1, 100);
 
-
+    glPushMatrix();
+    glTranslatef(0, -1, 0);
+    glTranslatef(currentX,currentY,0);
     glColor3ub(255, 193, 7);
-    glBegin(GL_POLYGON);
+    glScalef(1,1,1);
 
-        glVertex3f(currentX - size , currentY - size , 0);
-        glVertex3f(currentX + size , currentY - size , 0);
-        glVertex3f(currentX + size , currentY + size , 0);
-        glVertex3f(currentX - size , currentY + size , 0);
-    glEnd();
+    glutWireCube(1);
+    glPopMatrix();
+    //end for jumping cube
+
+    //start for floor
+    glPushMatrix();
+    glTranslatef(0, -8, 0);
+    glColor3ub(11, 11, 11);
+    glScalef(20,1,1);
+
+    glutWireCube(1);
+    glPopMatrix();
+    //end for floor
 
 
     glutSwapBuffers();
