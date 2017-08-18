@@ -28,7 +28,7 @@
 ***
 :alien: BouncyTower is hybrid between Icy Tower and Doodle Jump. :alien:
 ***
-###:video_game: Controls :video_game:
+:video_game: Controls :video_game:
 
 | Key        | Action           |
 |:-------------:|:-------------:|
@@ -40,5 +40,9 @@
 
 
 ***
-###:space_invader: Gameplay :space_invader:
+:space_invader: Gameplay v0.1 :space_invader:
+![alt tag](https://raw.githubusercontent.com/MATF-RG16/RG16-073-icytower/master/screenshoots/movement.gif)
+
+***
+:space_invader: Gameplay v0.2 :space_invader:
 ![alt tag](https://raw.githubusercontent.com/MATF-RG16/RG16-073-icytower/master/screenshoots/movement.gif)
