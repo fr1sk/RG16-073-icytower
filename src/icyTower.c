@@ -138,19 +138,19 @@ void blockInit(){
     for(int i=0; i<NUMOFBLOCKS; i++){
         switch (i) {
             case 0:
-                blocks[i].currX = 0;
-                blocks[i].currY = -8;
-                blocks[i].length = 1;
-                break;
-            case 1:
                 blocks[i].currX = -5;
                 blocks[i].currY = -3;
-                blocks[i].length = 1;
+                blocks[i].length = 3;
+                break;
+            case 1:
+                blocks[i].currX = 0;
+                blocks[i].currY = -8;
+                blocks[i].length = 11;
                 break;
             case 2:
                 blocks[i].currX = 5;
                 blocks[i].currY = 2;
-                blocks[i].length = 1;
+                blocks[i].length = 5;
                 break;
         }
         blocks[i].breakable = false;
@@ -185,13 +185,15 @@ void drawAllTheBlocks(){
 }
 
 void checkColision(int index){
-    float blockY = blocks[index].currX;
-    float blockX = blocks[index].currY;
-    float blockLen = blocks[index].length;
+    float blockY = blocks[index].currY;
+    float blockX = blocks[index].currX;
+    float blockLen = blocks[index].length/2;
     //currentFloorCoord = -10;
-    //printf("blockY=%lf  current=%lf\n", blockY, currentY);
+    printf("blockX=%lf  currentX=%lf\n", blockX, currentX);
     if(currentY <= blockY+0.5 && currentY >= blockY-0.5){
+        //        if(currentX >= blockX-blockLen && currentX <= blockX+blockLen){
         if(currentX >= blockX-blockLen && currentX <= blockX+blockLen){
+            
             currentFloorCoord = blockY;
             //vectorSpeedY = 5;
         }
@@ -265,14 +267,14 @@ static void on_timer(int value)
     
     jump();
     throughWall();
-    if(currentY<-30){
+    if(currentY<-15){
         animation_ongoing = 0;
         printf("GAME OVER\n");
     }
     
     
     
-    printf("x=%f  y=%f\n",currentX, currentY);
+    //printf("x=%f  y=%f\n",currentX, currentY);
     if(left){
         moveLeft();
     }
@@ -282,7 +284,8 @@ static void on_timer(int value)
     }
     
     
-    currentFloorCoord = (haveFloor ? -6 : -100);
+    //currentFloorCoord = (haveFloor ? -6 : -100);
+    currentFloorCoord = -50;
     for(int i=0; i<NUMOFBLOCKS; i++){
         checkColision(i);
     }
