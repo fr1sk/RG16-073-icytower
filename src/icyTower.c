@@ -8,7 +8,7 @@
 #define TIMER_ID 0
 #define TIMER_INTERVAL 25
 #define MOVEMENTSPEED 0.3
-#define NUMOFBLOCKS 2
+#define NUMOFBLOCKS 3
 
 
 struct point{
@@ -25,6 +25,7 @@ static bool right = false;
 static float border = 8.4;
 static float borderTrough = 8.39;
 int currBlocks = 0;
+bool haveFloor = true;
 
 static void onKeyboard(unsigned char key, int x, int y);
 static void onKeyboard2(unsigned char key, int x, int y);
@@ -135,16 +136,23 @@ void drawPlatform(){
 
 void blockInit(){
     for(int i=0; i<NUMOFBLOCKS; i++){
-        if(i==0){
-            blocks[i].currX = -5;
-            blocks[i].currY = -3;
-            blocks[i].length = 3;
-        } else {
-            blocks[i].currX = 5;
-            blocks[i].currY = 2;
-            blocks[i].length = 3;
+        switch (i) {
+            case 0:
+                blocks[i].currX = 0;
+                blocks[i].currY = -8;
+                blocks[i].length = 1;
+                break;
+            case 1:
+                blocks[i].currX = -5;
+                blocks[i].currY = -3;
+                blocks[i].length = 1;
+                break;
+            case 2:
+                blocks[i].currX = 5;
+                blocks[i].currY = 2;
+                blocks[i].length = 1;
+                break;
         }
-        
         blocks[i].breakable = false;
         
     }
@@ -154,11 +162,12 @@ void blockInit(){
 void drawBlock(int index){
     //platform test
     // printf("AAAAAAAAAAAAAAA %d", currBlocks);
+    
+    glPopMatrix();
     glPushMatrix();
     glTranslatef(blocks[index].currX, blocks[index].currY, 0);
     glColor3ub(255, 0, 0);
     glScalef(blocks[index].length,1,1);
-    
     glutWireCube(1);
     glPopMatrix();
     
@@ -185,15 +194,10 @@ void checkColision(int index){
         if(currentX >= blockX-blockLen && currentX <= blockX+blockLen){
             currentFloorCoord = blockY;
             //vectorSpeedY = 5;
-        } else {
-            currentFloorCoord = -6;
-            //vectorSpeedY = 0.4;
         }
         
         //animation_ongoing = 0;
         
-    } else {
-        currentFloorCoord = -6;
     }
 }
 
@@ -248,6 +252,7 @@ static void onKeyboard(unsigned char key, int x, int y)
             //change background color
             glClearColor((double)myRandom(255)/255, (double)myRandom(255)/255, (double)myRandom(255)/255, (double)myRandom(255)/255);
             glutPostRedisplay();
+            haveFloor = false;
             break;
     }
 }
@@ -260,6 +265,10 @@ static void on_timer(int value)
     
     jump();
     throughWall();
+    if(currentY<-30){
+        animation_ongoing = 0;
+        printf("GAME OVER\n");
+    }
     
     
     
@@ -272,6 +281,8 @@ static void on_timer(int value)
         moveRight();
     }
     
+    
+    currentFloorCoord = (haveFloor ? -6 : -100);
     for(int i=0; i<NUMOFBLOCKS; i++){
         checkColision(i);
     }
@@ -308,13 +319,13 @@ static void on_display(void)
     //end for jumping cube
     
     //start for floor
-    glPushMatrix();
-    glTranslatef(0, -8, 0);
-    glColor3ub(11, 11, 11);
-    glScalef(20,1,1);
-    
-    glutWireCube(1);
-    glPopMatrix();
+    //    glPushMatrix();
+    //    glTranslatef(0, -8, 0);
+    //    glColor3ub(11, 11, 11);
+    //    glScalef(20,1,1);
+    //
+    //    glutWireCube(1);
+    //    glPopMatrix();
     //end for floor
     
     
