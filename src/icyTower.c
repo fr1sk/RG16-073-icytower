@@ -7,7 +7,7 @@
 
 #define TIMER_ID 0
 #define TIMER_INTERVAL 25
-#define MOVEMENTSPEED 0.3
+#define MOVEMENTSPEED 0.4
 #define NUMOFBLOCKS 3
 
 
@@ -37,7 +37,8 @@ typedef struct {
     float currX;
     float length;
     float currY;
-    bool breakable;
+    int blockMode; //0 - normal | 1 - breakable | 2 - falling | 3 - boost
+    float yOffset;
 } Block;
 
 Block blocks[NUMOFBLOCKS];
@@ -101,12 +102,13 @@ void jump(){
     currentY += vectorSpeedY;
     if (currentY <= currentFloorCoord) {
         currentY = currentFloorCoord;
-        vectorSpeedY = 1;
+        //upspeed
+        vectorSpeedY = 1.2;
     }
     else{
-        //        falling down
-        if(vectorSpeedY>=-0.5){
-            vectorSpeedY -= 0.04;
+        //downspeed
+        if(vectorSpeedY>=-1){
+            vectorSpeedY -= 0.1;
         }
         
     }
@@ -124,14 +126,14 @@ void throughWall(){
 
 
 
-void drawPlatform(){
-#define glutCube glutWireCube
-    glPushMatrix();
-    glScalef(0.2, 1, 1);
-    glutCube(1);
-    glPopMatrix();
-#undef glutCube
-}
+//void drawPlatform(){
+//#define glutCube glutWireCube
+//    glPushMatrix();
+//    glScalef(0.2, 1, 1);
+//    glutCube(1);
+//    glPopMatrix();
+//#undef glutCube
+//}
 
 
 void blockInit(){
@@ -141,19 +143,22 @@ void blockInit(){
                 blocks[i].currX = -5;
                 blocks[i].currY = -3;
                 blocks[i].length = 3;
+                blocks[i].blockMode = 1;
                 break;
             case 1:
                 blocks[i].currX = 0;
                 blocks[i].currY = -8;
                 blocks[i].length = 11;
+                blocks[i].blockMode = 0;
                 break;
             case 2:
                 blocks[i].currX = 5;
                 blocks[i].currY = 2;
                 blocks[i].length = 5;
+                blocks[i].blockMode = 0;
                 break;
         }
-        blocks[i].breakable = false;
+        blocks[i].yOffset=0;
         
     }
     
@@ -161,14 +166,29 @@ void blockInit(){
 
 void drawBlock(int index){
     //platform test
-    // printf("AAAAAAAAAAAAAAA %d", currBlocks);
+    //printf("AAAAAAAAAAAAAAA %d", currBlocks);
+    //{1,.2,.2}
+    GLfloat diffuse_coeffs[4];
+    if(blocks[index].blockMode==1){
+        diffuse_coeffs[0] = 1;
+        diffuse_coeffs[1] = .2;
+        diffuse_coeffs[2] = .2;
+        diffuse_coeffs[3] = 1;
+    } else {
+        diffuse_coeffs[0] = .2;
+        diffuse_coeffs[1] = 1;
+        diffuse_coeffs[2] = .2;
+        diffuse_coeffs[3] = 1;
+        
+    }
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse_coeffs);
     
     glPopMatrix();
     glPushMatrix();
-    glTranslatef(blocks[index].currX, blocks[index].currY, 0);
+    glTranslatef(blocks[index].currX, blocks[index].currY+blocks[index].yOffset, 0);
     glColor3ub(255, 0, 0);
-    glScalef(blocks[index].length,1,1);
-    glutWireCube(1);
+    glScalef(blocks[index].length,0.2,1);
+    glutSolidCube(1);
     glPopMatrix();
     
     glutPostRedisplay();
@@ -184,22 +204,27 @@ void drawAllTheBlocks(){
     }
 }
 
+void removeIfBreakable(index){
+    if(blocks[index].blockMode==1 && blocks[index].yOffset < 0){
+        blocks[index].yOffset += -0.5;
+    }
+}
+
 void checkColision(int index){
-    float blockY = blocks[index].currY;
+    float localCurrY = currentY - 0.8;
+    float blockY = blocks[index].currY+0.1;
     float blockX = blocks[index].currX;
     float blockLen = blocks[index].length/2;
     //currentFloorCoord = -10;
-    printf("blockX=%lf  currentX=%lf\n", blockX, currentX);
-    if(currentY <= blockY+0.5 && currentY >= blockY-0.5){
-        //        if(currentX >= blockX-blockLen && currentX <= blockX+blockLen){
+    //printf("blockX=%lf  currentX=%lf\n", blockX, currentX);
+    printf("blockY=%lf  currentY=%lf offset=%lf\n", blockY, currentY, blocks[index].yOffset);
+    if(localCurrY <= blockY && localCurrY >= blockY-1){
         if(currentX >= blockX-blockLen && currentX <= blockX+blockLen){
-            
-            currentFloorCoord = blockY;
-            //vectorSpeedY = 5;
+            if(blocks[index].blockMode==1){
+                blocks[index].yOffset = -.01;
+            }
+            currentFloorCoord = blockY+0.5;
         }
-        
-        //animation_ongoing = 0;
-        
     }
 }
 
@@ -267,6 +292,7 @@ static void on_timer(int value)
     
     jump();
     throughWall();
+    
     if(currentY<-15){
         animation_ongoing = 0;
         printf("GAME OVER\n");
@@ -287,7 +313,11 @@ static void on_timer(int value)
     //currentFloorCoord = (haveFloor ? -6 : -100);
     currentFloorCoord = -50;
     for(int i=0; i<NUMOFBLOCKS; i++){
-        checkColision(i);
+        removeIfBreakable(i);
+        if(blocks[i].yOffset==0){
+            checkColision(i);
+        }
+        
     }
     
     
@@ -306,29 +336,63 @@ static void on_display(void)
     glEnable(GL_DEPTH_TEST);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+    
+    
+    GLfloat light_position[] = { 0, 2.3, -2.3, 1 };
+    
+    //lights
+    GLfloat light_ambient[] = { .1, .1, .1, 1 };
+    GLfloat light_diffuse[] = { .5, .5, .5, 1 };
+    GLfloat light_specular[] = { .6, .6, .6, 1 };
+    
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+    
+    GLfloat ambient_coeffs[] = { .7, .7, .7, 1 };
+    GLfloat specular_coeffs[] = { .6, .5, .6, 1 };
+    GLfloat shininess = 80;
+    
+    glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_coeffs);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, specular_coeffs);
+    glMaterialf(GL_FRONT, GL_SHININESS, shininess);
+    //lights
+    
     gluLookAt(15,0,0,0,0,0,0,1,0);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluPerspective(60, 1, 1, 100);
     
+    
+    //jumping cube
+    GLfloat diffuse_coeffs[4];
+    diffuse_coeffs[0] = 1;
+    diffuse_coeffs[1] = 1;
+    diffuse_coeffs[2] = 1;
+    diffuse_coeffs[3] = 1;
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse_coeffs);
+    
+    
     glPushMatrix();
-    glTranslatef(0, -1, 0);
     glTranslatef(currentX,currentY,0);
     glColor3ub(255, 193, 7);
     glScalef(1,1,1);
     
-    glutWireCube(1);
+    glutSolidCube(1);
     glPopMatrix();
     //end for jumping cube
     
     //start for floor
-    //    glPushMatrix();
-    //    glTranslatef(0, -8, 0);
-    //    glColor3ub(11, 11, 11);
-    //    glScalef(20,1,1);
-    //
-    //    glutWireCube(1);
-    //    glPopMatrix();
+    //glPushMatrix();
+    //glTranslatef(0, -8, 0);
+    //glColor3ub(11, 11, 11);
+    //glScalef(20,1,1);
+    
+    //glutWireCube(1);
+    //glPopMatrix();
     //end for floor
     
     
