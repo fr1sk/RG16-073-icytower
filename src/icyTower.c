@@ -2,13 +2,22 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <time.h>
-#include <GLUT/glut.h>
-//#include <GL/glut.h>
+#include <stdio.h>
+#include <time.h>
+#include <string.h>
+//#include <GLUT/glut.h>
+#include <stdio.h>
+
+
+//#include <OpenGL/gl.h>
+//#include <OpenGL/glu.h>
+#include <GL/glut.h>
 
 #define TIMER_ID 0
 #define TIMER_INTERVAL 25
 #define MOVEMENTSPEED 0.4
 #define NUMOFBLOCKS 3
+#define STARTSCROLLING 1
 
 
 struct point{
@@ -26,6 +35,9 @@ static float border = 8.4;
 static float borderTrough = 8.39;
 int currBlocks = 0;
 bool haveFloor = true;
+char textScore[15];
+float worldMovementSpeed = 0;
+bool moveWorld = false;
 
 static void onKeyboard(unsigned char key, int x, int y);
 static void onKeyboard2(unsigned char key, int x, int y);
@@ -45,7 +57,6 @@ Block blocks[NUMOFBLOCKS];
 void drawAllTheBlocks();
 void blockInit();
 
-
 int main(int argc, char **argv)
 {
     //glut init
@@ -54,7 +65,7 @@ int main(int argc, char **argv)
     
     //window create
     glutInitWindowSize(640, 740);
-    glutInitWindowPosition(100, 100);
+    glutInitWindowPosition(350, 100);
     glutCreateWindow(argv[0]);
     
     glutKeyboardFunc(onKeyboard);
@@ -73,6 +84,12 @@ int main(int argc, char **argv)
     glutMainLoop();
     
     return 0;
+}
+
+float randBetween(float min, float max){
+    //r = (rand() % (max + 1 - min)) + min
+    float r = (float)rand() / (float)(max+1-min) + min;
+    return r;
 }
 
 int myRandom(int m) {
@@ -97,9 +114,18 @@ void moveRight(){
     printf("\td - move right\n");
 }
 
+void startMovingWorld(){
+    worldMovementSpeed = 0.1;
+    moveWorld = true;
+}
+
 void jump(){
     
     currentY += vectorSpeedY;
+    if(currentY >= 1){
+        startMovingWorld();
+    }
+    
     if (currentY <= currentFloorCoord) {
         currentY = currentFloorCoord;
         //upspeed
@@ -124,6 +150,54 @@ void throughWall(){
     }
 }
 
+GLuint loadTexture( const char * filename )
+{
+    
+    GLuint texture;
+    
+    int width, height;
+    
+    unsigned char * data;
+    
+    FILE * file;
+    
+    file = fopen( filename, "rb" );
+    
+    if ( file == NULL ) return 0;
+    width = 1024;
+    height = 512;
+    data = (unsigned char *)malloc( width * height * 3 );
+    //int size = fseek(file,);
+    fread( data, width * height * 3, 1, file );
+    fclose( file );
+    
+    for(int i = 0; i < width * height ; ++i)
+    {
+        int index = i*3;
+        unsigned char B,R;
+        B = data[index];
+        R = data[index+2];
+        
+        data[index] = R;
+        data[index+2] = B;
+        
+    }
+    
+    
+    glGenTextures( 1, &texture );
+    glBindTexture( GL_TEXTURE_2D, texture );
+    glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE,GL_MODULATE );
+    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_NEAREST );
+    
+    
+    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,GL_LINEAR );
+    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,GL_REPEAT );
+    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,GL_REPEAT );
+    gluBuild2DMipmaps( GL_TEXTURE_2D, 3, width, height,GL_RGB, GL_UNSIGNED_BYTE, data );
+    free( data );
+    
+    return texture;
+}
 
 
 //void drawPlatform(){
@@ -134,6 +208,13 @@ void throughWall(){
 //    glPopMatrix();
 //#undef glutCube
 //}
+
+void generateRandBlockCoord(int x){
+    float blockY = randBetween(3.2+x,7.1+x);
+    float blockX = randBetween(-8.0, 8.0);
+    
+    
+}
 
 
 void blockInit(){
@@ -165,9 +246,6 @@ void blockInit(){
 }
 
 void drawBlock(int index){
-    //platform test
-    //printf("AAAAAAAAAAAAAAA %d", currBlocks);
-    //{1,.2,.2}
     GLfloat diffuse_coeffs[4];
     if(blocks[index].blockMode==1){
         diffuse_coeffs[0] = 1;
@@ -197,6 +275,41 @@ void drawBlock(int index){
 }
 
 
+void scoreInit(){
+    strcpy(textScore,"Score: 0");
+    return;
+}
+
+
+void RenderString(float x, float y, void *font, const char* string, float r, float g, float b)
+{
+    GLfloat emission_coeffs[] = { r, g, b, 1 };
+    glMaterialfv(GL_FRONT, GL_EMISSION, emission_coeffs);
+    glRasterPos3f(x, y, .3);
+    //glutBitmapString(font, string);
+    emission_coeffs[0] = 0;
+    emission_coeffs[1] = 0;
+    emission_coeffs[2] = 0;
+    emission_coeffs[3] = 1;
+    glMaterialfv(GL_FRONT, GL_EMISSION, emission_coeffs);
+}
+
+void drawScore(){
+    float text_x = .73;
+    float text_y = 1.52;
+    float text_z = .3;
+    sprintf(textScore, "Score: %d", 123);
+    RenderString(text_x, text_y, GLUT_BITMAP_HELVETICA_18, textScore, .6, .6, .6);
+}
+
+void gameOver(){
+    animation_ongoing = 0;
+    glClearColor(1.0f, 0.4f, 0.3f, 1.0f );
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    drawScore();
+    
+    printf("GAME OVER\n");
+}
 
 void drawAllTheBlocks(){
     for(int i=0; i<NUMOFBLOCKS; i++){
@@ -217,7 +330,7 @@ void checkColision(int index){
     float blockLen = blocks[index].length/2;
     //currentFloorCoord = -10;
     //printf("blockX=%lf  currentX=%lf\n", blockX, currentX);
-    printf("blockY=%lf  currentY=%lf offset=%lf\n", blockY, currentY, blocks[index].yOffset);
+    //printf("blockY=%lf  currentY=%lf offset=%lf\n", blockY, currentY, blocks[index].yOffset);
     if(localCurrY <= blockY && localCurrY >= blockY-1){
         if(currentX >= blockX-blockLen && currentX <= blockX+blockLen){
             if(blocks[index].blockMode==1){
@@ -294,13 +407,12 @@ static void on_timer(int value)
     throughWall();
     
     if(currentY<-15){
-        animation_ongoing = 0;
-        printf("GAME OVER\n");
+        gameOver();
     }
     
     
     
-    //printf("x=%f  y=%f\n",currentX, currentY);
+    printf("x=%f  y=%f\n",currentX, currentY);
     if(left){
         moveLeft();
     }
@@ -314,8 +426,16 @@ static void on_timer(int value)
     currentFloorCoord = -50;
     for(int i=0; i<NUMOFBLOCKS; i++){
         removeIfBreakable(i);
+        //remove colision if block is breakable and removed from map
         if(blocks[i].yOffset==0){
             checkColision(i);
+        }
+        
+    }
+    
+    if(moveWorld){
+        for(int i=0; i<NUMOFBLOCKS; i++){
+            blocks[i].currY -= worldMovementSpeed;
         }
         
     }
@@ -382,6 +502,8 @@ static void on_display(void)
     glScalef(1,1,1);
     
     glutSolidCube(1);
+    
+    
     glPopMatrix();
     //end for jumping cube
     
@@ -397,6 +519,8 @@ static void on_display(void)
     
     
     //blockInit();
+    //drawImage();
+    
     drawAllTheBlocks();
     glFlush();
     glutSwapBuffers();
