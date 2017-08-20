@@ -5,13 +5,13 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
-//#include <GLUT/glut.h>
+#include <GLUT/glut.h>
 #include <stdio.h>
 
 
 //#include <OpenGL/gl.h>
 //#include <OpenGL/glu.h>
-#include <GL/glut.h>
+//#include <GL/glut.h>
 
 #define TIMER_ID 0
 #define TIMER_INTERVAL 25
@@ -38,6 +38,7 @@ bool haveFloor = true;
 char textScore[15];
 float worldMovementSpeed = 0;
 bool moveWorld = false;
+int globalScore = 0;
 
 static void onKeyboard(unsigned char key, int x, int y);
 static void onKeyboard2(unsigned char key, int x, int y);
@@ -51,6 +52,7 @@ typedef struct {
     float currY;
     int blockMode; //0 - normal | 1 - breakable | 2 - falling | 3 - boost
     float yOffset;
+    int bonus; //increase score by BONUS when jump on this block
 } Block;
 
 Block blocks[NUMOFBLOCKS];
@@ -88,7 +90,8 @@ int main(int argc, char **argv)
 
 float randBetween(float min, float max){
     //r = (rand() % (max + 1 - min)) + min
-    float r = (float)rand() / (float)(max+1-min) + min;
+    float r = (rand() % (int)(max+1-min)) + min;
+    //printf("RAND %lf", r);
     return r;
 }
 
@@ -106,12 +109,12 @@ int myRandom(int m) {
 
 void moveLeft(){
     currentX -= MOVEMENTSPEED;
-    printf("\ta - move left\n");
+    //printf("\ta - move left\n");
 }
 
 void moveRight(){
     currentX += MOVEMENTSPEED;
-    printf("\td - move right\n");
+    //printf("\td - move right\n");
 }
 
 void startMovingWorld(){
@@ -120,8 +123,6 @@ void startMovingWorld(){
 }
 
 void jump(){
-    
-    currentY += vectorSpeedY;
     if(currentY >= 1){
         startMovingWorld();
     }
@@ -136,8 +137,11 @@ void jump(){
         if(vectorSpeedY>=-1){
             vectorSpeedY -= 0.1;
         }
-        
     }
+    if(currentY>=5 && vectorSpeedY>0){
+        return;
+    }
+    currentY += vectorSpeedY;
 }
 
 void throughWall(){
@@ -210,10 +214,22 @@ GLuint loadTexture( const char * filename )
 //}
 
 void generateRandBlockCoord(int x){
-    float blockY = randBetween(3.2+x,7.1+x);
+    float blockY = randBetween(3.2,7.1);
     float blockX = randBetween(-8.0, 8.0);
-    
-    
+}
+
+
+void setNewBlockCoords(){
+    for(int i=0; i<NUMOFBLOCKS; i++){
+        if(blocks[i].currY<=-9){
+            blocks[i].currY = 10;
+            blocks[i].length = randBetween(2, 7);
+            blocks[i].currX = randBetween(-8.3, 8.3);
+            blocks[i].blockMode = randBetween(0, 1);
+            blocks[i].yOffset = 0;
+            blocks[i].bonus = 1;
+        }
+    }
 }
 
 
@@ -225,18 +241,21 @@ void blockInit(){
                 blocks[i].currY = -3;
                 blocks[i].length = 3;
                 blocks[i].blockMode = 1;
+                blocks[i].bonus = 1;
                 break;
             case 1:
                 blocks[i].currX = 0;
                 blocks[i].currY = -8;
                 blocks[i].length = 11;
                 blocks[i].blockMode = 0;
+                blocks[i].bonus = 0;
                 break;
             case 2:
                 blocks[i].currX = 5;
                 blocks[i].currY = 2;
                 blocks[i].length = 5;
                 blocks[i].blockMode = 0;
+                blocks[i].bonus = 1;
                 break;
         }
         blocks[i].yOffset=0;
@@ -324,6 +343,9 @@ void removeIfBreakable(index){
 }
 
 void checkColision(int index){
+    if(vectorSpeedY>=0){
+        return;
+    }
     float localCurrY = currentY - 0.8;
     float blockY = blocks[index].currY+0.1;
     float blockX = blocks[index].currX;
@@ -331,12 +353,16 @@ void checkColision(int index){
     //currentFloorCoord = -10;
     //printf("blockX=%lf  currentX=%lf\n", blockX, currentX);
     //printf("blockY=%lf  currentY=%lf offset=%lf\n", blockY, currentY, blocks[index].yOffset);
-    if(localCurrY <= blockY && localCurrY >= blockY-1){
+    if(localCurrY <= blockY && localCurrY >= blockY-1){ //1.5 instead of 1
         if(currentX >= blockX-blockLen && currentX <= blockX+blockLen){
+            currentFloorCoord = blockY+0.8;
+            globalScore +=  blocks[index].bonus;
+            blocks[index].bonus = 0;
+            printf("SCORE: %d\n", globalScore);
             if(blocks[index].blockMode==1){
                 blocks[index].yOffset = -.01;
             }
-            currentFloorCoord = blockY+0.5;
+            
         }
     }
 }
@@ -412,7 +438,7 @@ static void on_timer(int value)
     
     
     
-    printf("x=%f  y=%f\n",currentX, currentY);
+    //printf("x=%f  y=%f\n",currentX, currentY);
     if(left){
         moveLeft();
     }
@@ -425,18 +451,26 @@ static void on_timer(int value)
     //currentFloorCoord = (haveFloor ? -6 : -100);
     currentFloorCoord = -50;
     for(int i=0; i<NUMOFBLOCKS; i++){
-        removeIfBreakable(i);
+        
         //remove colision if block is breakable and removed from map
         if(blocks[i].yOffset==0){
             checkColision(i);
+            
         }
+        removeIfBreakable(i);
         
     }
     
     if(moveWorld){
         for(int i=0; i<NUMOFBLOCKS; i++){
-            blocks[i].currY -= worldMovementSpeed;
+            if(currentY>=5 && vectorSpeedY>0){
+                blocks[i].currY -= vectorSpeedY * 1.001; //*1.2;
+                
+            } else {
+                blocks[i].currY -= worldMovementSpeed;
+            }
         }
+        setNewBlockCoords();
         
     }
     
