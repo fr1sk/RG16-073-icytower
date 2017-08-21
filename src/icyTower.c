@@ -18,6 +18,10 @@
 #define MOVEMENTSPEED 0.4
 #define NUMOFBLOCKS 3
 #define STARTSCROLLING 1
+#define BLUE 3
+#define YELLOW 2
+#define GREEN 0
+#define RED 1
 
 
 struct point{
@@ -39,6 +43,8 @@ char textScore[15];
 float worldMovementSpeed = 0;
 bool moveWorld = false;
 int globalScore = 0;
+bool bonusActivated = false;
+int bonusJumps = 0;
 
 static void onKeyboard(unsigned char key, int x, int y);
 static void onKeyboard2(unsigned char key, int x, int y);
@@ -50,7 +56,7 @@ typedef struct {
     float currX;
     float length;
     float currY;
-    int blockMode; //0 - normal | 1 - breakable | 2 - falling | 3 - boost
+    int blockMode; //0 - normal | 1 - breakable | 2 - bonus | 3 - boost
     float yOffset;
     int bonus; //increase score by BONUS when jump on this block
 } Block;
@@ -88,11 +94,29 @@ int main(int argc, char **argv)
     return 0;
 }
 
+
+
+
 float randBetween(float min, float max){
     //r = (rand() % (max + 1 - min)) + min
     float r = (rand() % (int)(max+1-min)) + min;
     //printf("RAND %lf", r);
     return r;
+}
+
+int getRandomBlock(){
+    int x = randBetween(0, 100);
+    printf("RANDOM: %d\n", x);
+    
+    if(x<40){
+        return 0;
+    } else if(x>=40 && x<70){
+        return 1;
+    } else if(x>=70 && x<90){
+        return 3;
+    } else {
+        return 2;
+    }
 }
 
 int myRandom(int m) {
@@ -198,7 +222,7 @@ GLuint loadTexture( const char * filename )
     glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,GL_REPEAT );
     glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,GL_REPEAT );
     gluBuild2DMipmaps( GL_TEXTURE_2D, 3, width, height,GL_RGB, GL_UNSIGNED_BYTE, data );
-    free( data );
+    free(data);
     
     return texture;
 }
@@ -225,9 +249,15 @@ void setNewBlockCoords(){
             blocks[i].currY = 10;
             blocks[i].length = randBetween(2, 7);
             blocks[i].currX = randBetween(-8.3, 8.3);
-            blocks[i].blockMode = randBetween(0, 1);
+            blocks[i].blockMode = getRandomBlock();
             blocks[i].yOffset = 0;
-            blocks[i].bonus = 1;
+            if(blocks[i].blockMode==BLUE){
+                blocks[i].bonus = 5;
+            } else {
+                blocks[i].bonus = 1;
+            }
+            
+            
         }
     }
 }
@@ -271,6 +301,16 @@ void drawBlock(int index){
         diffuse_coeffs[1] = .2;
         diffuse_coeffs[2] = .2;
         diffuse_coeffs[3] = 1;
+    } else if(blocks[index].blockMode==2){
+        diffuse_coeffs[0] = 1;
+        diffuse_coeffs[1] = .8;
+        diffuse_coeffs[2] = 0;
+        diffuse_coeffs[3] = 1;
+    } else if(blocks[index].blockMode==3){
+        diffuse_coeffs[0] = .2;
+        diffuse_coeffs[1] = .2;
+        diffuse_coeffs[2] = 1;
+        diffuse_coeffs[3] = 1;
     } else {
         diffuse_coeffs[0] = .2;
         diffuse_coeffs[1] = 1;
@@ -289,8 +329,6 @@ void drawBlock(int index){
     glPopMatrix();
     
     glutPostRedisplay();
-    
-    
 }
 
 
@@ -298,7 +336,6 @@ void scoreInit(){
     strcpy(textScore,"Score: 0");
     return;
 }
-
 
 void RenderString(float x, float y, void *font, const char* string, float r, float g, float b)
 {
@@ -355,13 +392,38 @@ void checkColision(int index){
     //printf("blockY=%lf  currentY=%lf offset=%lf\n", blockY, currentY, blocks[index].yOffset);
     if(localCurrY <= blockY && localCurrY >= blockY-1){ //1.5 instead of 1
         if(currentX >= blockX-blockLen && currentX <= blockX+blockLen){
-            currentFloorCoord = blockY+0.8;
-            globalScore +=  blocks[index].bonus;
+            if(blocks[index].blockMode==1){
+                //red falling block
+                currentFloorCoord = blockY+0.8;
+                blocks[index].yOffset = -.01;
+            } else if(blocks[index].blockMode == 2){
+                //yellow bonus block
+                currentFloorCoord = blockY+0.8;
+                printf("BONUS!\n");
+                bonusActivated = true;
+                bonusJumps = 5;
+            } else if(blocks[index].blockMode == 3){
+                //blue boost block
+                currentFloorCoord = blockY+5.8;
+                
+            } else {
+                currentFloorCoord = blockY+0.8;
+            }
+            if(bonusActivated){
+                if(bonusJumps>0){
+                    bonusJumps--;
+                    globalScore +=  blocks[index].bonus*2;
+                } else {
+                    printf("BONUS ENDED :(\n");
+                    bonusActivated = false;
+                    globalScore += blocks[index].bonus;
+                }
+                
+            } else {
+                globalScore +=  blocks[index].bonus;
+            }
             blocks[index].bonus = 0;
             printf("SCORE: %d\n", globalScore);
-            if(blocks[index].blockMode==1){
-                blocks[index].yOffset = -.01;
-            }
             
         }
     }
@@ -523,10 +585,17 @@ static void on_display(void)
     
     //jumping cube
     GLfloat diffuse_coeffs[4];
-    diffuse_coeffs[0] = 1;
-    diffuse_coeffs[1] = 1;
-    diffuse_coeffs[2] = 1;
-    diffuse_coeffs[3] = 1;
+    if(bonusActivated){
+        diffuse_coeffs[0] = 1;
+        diffuse_coeffs[1] = .8;
+        diffuse_coeffs[2] = 0;
+        diffuse_coeffs[3] = 1;
+    } else {
+        diffuse_coeffs[0] = 1;
+        diffuse_coeffs[1] = 1;
+        diffuse_coeffs[2] = 1;
+        diffuse_coeffs[3] = 1;
+    }
     glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse_coeffs);
     
     
