@@ -5,8 +5,8 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
-#include <GLUT/glut.h> //   *** DISABLE THIS LINE FOR LINUX ***
-//#include <GL/glut.h>      *** ENABLE THIS LINE FOR LINUX ***
+//#include <GLUT/glut.h> //   *** DISABLE THIS LINE FOR LINUX ***
+#include <GL/glut.h>     // *** ENABLE THIS LINE FOR LINUX ***
 #include <stdio.h>
 
 
