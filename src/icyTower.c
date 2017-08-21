@@ -286,7 +286,7 @@ void blockInit(){
                 blocks[i].currX = 5;
                 blocks[i].currY = 2;
                 blocks[i].length = 5;
-                blocks[i].blockMode = BLUE;
+                blocks[i].blockMode = GREEN;
                 blocks[i].bonus = 1;
                 break;
         }
@@ -449,6 +449,48 @@ static void onKeyboard2(unsigned char key, int x, int y){
     }
 }
 
+void drawPlayer(){
+    //jumping cube
+    GLfloat diffuse_coeffs[4];
+    if(bonusActivated){
+        diffuse_coeffs[0] = 1;
+        diffuse_coeffs[1] = .8;
+        diffuse_coeffs[2] = 0;
+        diffuse_coeffs[3] = 1;
+    } else {
+        diffuse_coeffs[0] = 1;
+        diffuse_coeffs[1] = 1;
+        diffuse_coeffs[2] = 1;
+        diffuse_coeffs[3] = 1;
+    }
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse_coeffs);
+    
+    
+    glPushMatrix();
+    
+    glTranslatef(currentX,currentY,0);
+    glRotatef(rotation,0.0,0.0,1.0);
+    
+    glColor3ub(255, 193, 7);
+    glScalef(1,1,1);
+    
+    glutSolidCube(1);
+    
+    
+    glPopMatrix();
+    //end for jumping cube
+}
+
+void restartGame(){
+    blockInit();
+    currentX = 0;
+    currentY = 0;
+    globalScore = 0;
+    moveWorld = false;
+    bonusActivated = false;
+    printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNEW GAME: ");
+}
+
 static void onKeyboard(unsigned char key, int x, int y)
 {
     switch (key) {
@@ -485,6 +527,12 @@ static void onKeyboard(unsigned char key, int x, int y)
             //move right
             right = true;
             break;
+            
+        case 'r':
+        case 'R':
+            //restart game
+            restartGame();
+            
             
             
         case 'l':
@@ -561,6 +609,8 @@ static void on_timer(int value)
     }
 }
 
+
+
 static void on_display(void)
 {
     //start for jumping cube
@@ -599,35 +649,7 @@ static void on_display(void)
     gluPerspective(60, 1, 1, 100);
     
     
-    //jumping cube
-    GLfloat diffuse_coeffs[4];
-    if(bonusActivated){
-        diffuse_coeffs[0] = 1;
-        diffuse_coeffs[1] = .8;
-        diffuse_coeffs[2] = 0;
-        diffuse_coeffs[3] = 1;
-    } else {
-        diffuse_coeffs[0] = 1;
-        diffuse_coeffs[1] = 1;
-        diffuse_coeffs[2] = 1;
-        diffuse_coeffs[3] = 1;
-    }
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse_coeffs);
-    
-    
-    glPushMatrix();
-    
-    glTranslatef(currentX,currentY,0);
-    glRotatef(rotation,0.0,0.0,1.0);
-    
-    glColor3ub(255, 193, 7);
-    glScalef(1,1,1);
-    
-    glutSolidCube(1);
-    
-    
-    glPopMatrix();
-    //end for jumping cube
+    drawPlayer();
     
     //start for floor
     //glPushMatrix();
