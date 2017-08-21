@@ -49,4 +49,4 @@
 
 ***
 :space_invader: Gameplay v0.3 :space_invader:
-![alt tag](https://raw.githubusercontent.com/MATF-RG16/RG16-073-icytower/master/screenshoots/bouncyTowerV03.gif)
+![alt tag](https://raw.githubusercontent.com/MATF-RG16/RG16-073-icytower/master/screenshoots/BouncyTowerV03.gif)
