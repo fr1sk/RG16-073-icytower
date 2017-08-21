@@ -5,13 +5,14 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
-#include <GLUT/glut.h>
+#include <GLUT/glut.h> //   *** DISABLE THIS LINE FOR LINUX ***
+//#include <GL/glut.h>      *** ENABLE THIS LINE FOR LINUX ***
 #include <stdio.h>
 
 
 //#include <OpenGL/gl.h>
 //#include <OpenGL/glu.h>
-//#include <GL/glut.h>
+
 
 #define TIMER_ID 0
 #define TIMER_INTERVAL 25
@@ -45,6 +46,7 @@ bool moveWorld = false;
 int globalScore = 0;
 bool bonusActivated = false;
 int bonusJumps = 0;
+int rotation = 0;
 
 static void onKeyboard(unsigned char key, int x, int y);
 static void onKeyboard2(unsigned char key, int x, int y);
@@ -106,13 +108,13 @@ float randBetween(float min, float max){
 
 int getRandomBlock(){
     int x = randBetween(0, 100);
-    printf("RANDOM: %d\n", x);
+    //printf("RANDOM: %d\n", x);
     
     if(x<40){
         return 0;
-    } else if(x>=40 && x<70){
+    } else if(x>=40 && x<75){
         return 1;
-    } else if(x>=70 && x<90){
+    } else if(x>=75 && x<90){
         return 3;
     } else {
         return 2;
@@ -284,7 +286,7 @@ void blockInit(){
                 blocks[i].currX = 5;
                 blocks[i].currY = 2;
                 blocks[i].length = 5;
-                blocks[i].blockMode = 0;
+                blocks[i].blockMode = BLUE;
                 blocks[i].bonus = 1;
                 break;
         }
@@ -379,6 +381,15 @@ void removeIfBreakable(index){
     }
 }
 
+void rotationIncrement(){
+    if(rotation>0 && rotation<360){
+        rotation += 30;
+    }
+    if(rotation==360){
+        rotation = 0;
+    }
+}
+
 void checkColision(int index){
     if(vectorSpeedY>=0){
         return;
@@ -392,19 +403,20 @@ void checkColision(int index){
     //printf("blockY=%lf  currentY=%lf offset=%lf\n", blockY, currentY, blocks[index].yOffset);
     if(localCurrY <= blockY && localCurrY >= blockY-1){ //1.5 instead of 1
         if(currentX >= blockX-blockLen && currentX <= blockX+blockLen){
-            if(blocks[index].blockMode==1){
+            if(blocks[index].blockMode==RED){
                 //red falling block
                 currentFloorCoord = blockY+0.8;
                 blocks[index].yOffset = -.01;
-            } else if(blocks[index].blockMode == 2){
+            } else if(blocks[index].blockMode == YELLOW){
                 //yellow bonus block
                 currentFloorCoord = blockY+0.8;
                 printf("BONUS!\n");
                 bonusActivated = true;
                 bonusJumps = 5;
-            } else if(blocks[index].blockMode == 3){
+            } else if(blocks[index].blockMode == BLUE){
                 //blue boost block
                 currentFloorCoord = blockY+5.8;
+                rotation = 1;
                 
             } else {
                 currentFloorCoord = blockY+0.8;
@@ -510,6 +522,8 @@ static void on_timer(int value)
     }
     
     
+    
+    
     //currentFloorCoord = (haveFloor ? -6 : -100);
     currentFloorCoord = -50;
     for(int i=0; i<NUMOFBLOCKS; i++){
@@ -522,6 +536,8 @@ static void on_timer(int value)
         removeIfBreakable(i);
         
     }
+    
+    rotationIncrement();
     
     if(moveWorld){
         for(int i=0; i<NUMOFBLOCKS; i++){
@@ -600,7 +616,10 @@ static void on_display(void)
     
     
     glPushMatrix();
+    
     glTranslatef(currentX,currentY,0);
+    glRotatef(rotation,0.0,0.0,1.0);
+    
     glColor3ub(255, 193, 7);
     glScalef(1,1,1);
     
