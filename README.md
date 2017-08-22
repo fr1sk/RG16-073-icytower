@@ -37,6 +37,7 @@
 | o      | start game      |
 | p      | stop game      |
 | l      | change color      |
+| r      | restart game   |
 
 
 ***
