@@ -5,10 +5,17 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
-//#include <GLUT/glut.h> //   *** DISABLE THIS LINE FOR LINUX ***
-#include <GL/glut.h>     // *** ENABLE THIS LINE FOR LINUX ***
+#include <GLUT/glut.h> //   *** DISABLE THIS LINE FOR LINUX ***
+//#include <GL/glut.h>      *** ENABLE THIS LINE FOR LINUX ***
 #include <stdio.h>
 
+//#include <freeglut.h>
+//#include <GL/gl.h>
+//#include <GL/glut.h>
+
+//#include <OpenGL/gl.h>
+//#include <OpenGL/glu.h>
+//#include <GLUT/GLUT.h>
 
 //#include <OpenGL/gl.h>
 //#include <OpenGL/glu.h>
@@ -63,9 +70,19 @@ typedef struct {
     int bonus; //increase score by BONUS when jump on this block
 } Block;
 
+typedef struct {
+    float r;
+    float g;
+    float b;
+} RGB;
+
+
+
 Block blocks[NUMOFBLOCKS];
+void pickColor(bool x);
 void drawAllTheBlocks();
 void blockInit();
+
 
 int main(int argc, char **argv)
 {
@@ -85,7 +102,8 @@ int main(int argc, char **argv)
     srand(time(NULL));
     animation_ongoing = 0;
     
-    glClearColor(0, 0.6, 0.544, 0);
+    //glClearColor(0, 0.6, 0.544, 0);
+    pickColor(true);
     glEnable(GL_DEPTH_TEST);
     printf("Input debug:\n");
     
@@ -179,56 +197,6 @@ void throughWall(){
         currentX = -borderTrough;
     }
 }
-
-GLuint loadTexture( const char * filename )
-{
-    
-    GLuint texture;
-    
-    int width, height;
-    
-    unsigned char * data;
-    
-    FILE * file;
-    
-    file = fopen( filename, "rb" );
-    
-    if ( file == NULL ) return 0;
-    width = 1024;
-    height = 512;
-    data = (unsigned char *)malloc( width * height * 3 );
-    //int size = fseek(file,);
-    fread( data, width * height * 3, 1, file );
-    fclose( file );
-    
-    for(int i = 0; i < width * height ; ++i)
-    {
-        int index = i*3;
-        unsigned char B,R;
-        B = data[index];
-        R = data[index+2];
-        
-        data[index] = R;
-        data[index+2] = B;
-        
-    }
-    
-    
-    glGenTextures( 1, &texture );
-    glBindTexture( GL_TEXTURE_2D, texture );
-    glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE,GL_MODULATE );
-    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_NEAREST );
-    
-    
-    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,GL_LINEAR );
-    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,GL_REPEAT );
-    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,GL_REPEAT );
-    gluBuild2DMipmaps( GL_TEXTURE_2D, 3, width, height,GL_RGB, GL_UNSIGNED_BYTE, data );
-    free(data);
-    
-    return texture;
-}
-
 
 //void drawPlatform(){
 //#define glutCube glutWireCube
@@ -339,25 +307,12 @@ void scoreInit(){
     return;
 }
 
-void RenderString(float x, float y, void *font, const char* string, float r, float g, float b)
-{
-    GLfloat emission_coeffs[] = { r, g, b, 1 };
-    glMaterialfv(GL_FRONT, GL_EMISSION, emission_coeffs);
-    glRasterPos3f(x, y, .3);
-    //glutBitmapString(font, string);
-    emission_coeffs[0] = 0;
-    emission_coeffs[1] = 0;
-    emission_coeffs[2] = 0;
-    emission_coeffs[3] = 1;
-    glMaterialfv(GL_FRONT, GL_EMISSION, emission_coeffs);
-}
-
 void drawScore(){
     float text_x = .73;
     float text_y = 1.52;
     float text_z = .3;
     sprintf(textScore, "Score: %d", 123);
-    RenderString(text_x, text_y, GLUT_BITMAP_HELVETICA_18, textScore, .6, .6, .6);
+    //RenderString(text_x, text_y, GLUT_BITMAP_HELVETICA_18, textScore, .6, .6, .6);
 }
 
 void gameOver(){
@@ -481,6 +436,18 @@ void drawPlayer(){
     //end for jumping cube
 }
 
+void pickColor(bool x){
+    //139 194 74
+    RGB wallColors[] = {{0,0.6,0.544},{0.42,0.27,0.75},{1,0.61,0},{0.583,0.799,.31},{0,0.76,0.851}};
+    RGB currentWall;
+    if(x){
+        currentWall = wallColors[0];
+    } else {
+        currentWall = wallColors[(int)randBetween(0,4)];
+    }
+    glClearColor(currentWall.r, currentWall.g, currentWall.b, 0);
+}
+
 void restartGame(){
     blockInit();
     currentX = 0;
@@ -488,6 +455,7 @@ void restartGame(){
     globalScore = 0;
     moveWorld = false;
     bonusActivated = false;
+    pickColor(false);
     printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNEW GAME: ");
 }
 
@@ -532,7 +500,7 @@ static void onKeyboard(unsigned char key, int x, int y)
         case 'R':
             //restart game
             restartGame();
-            
+            break;
             
             
         case 'l':
