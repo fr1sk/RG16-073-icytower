@@ -40,20 +40,10 @@
 | r      | restart game   |
 
 
-***
-:space_invader: Gameplay v0.1 :space_invader:
-![alt tag](https://raw.githubusercontent.com/MATF-RG16/RG16-073-icytower/master/screenshoots/movement.gif)
-
-***
-:space_invader: Gameplay v0.3 :space_invader:
-![alt tag](https://raw.githubusercontent.com/MATF-RG16/RG16-073-icytower/master/screenshoots/bouncyTowerV02.gif)
-
-***
-:space_invader: Gameplay v0.4 :space_invader:
-
-![alt tag](https://raw.githubusercontent.com/MATF-RG16/RG16-073-icytower/master/screenshoots/BouncyTowerV03.gif)
 
 ***
 :space_invader: Gameplay v0.5 :space_invader:
 
 ![alt tag](https://raw.githubusercontent.com/MATF-RG16/RG16-073-icytower/master/screenshoots/BouncyTowerV05.gif)
+
+for older versions check wiki/reviews
