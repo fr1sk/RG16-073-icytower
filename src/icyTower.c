@@ -5,9 +5,10 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
-#include <GLUT/glut.h> //   *** DISABLE THIS LINE FOR LINUX ***
-//#include <GL/glut.h>      *** ENABLE THIS LINE FOR LINUX ***
+//#include <GLUT/glut.h> //   *** DISABLE THIS LINE FOR LINUX ***
+#include <GL/glut.h>      *** ENABLE THIS LINE FOR LINUX ***
 #include <stdio.h>
+#include <math.h>
 
 //#include <freeglut.h>
 //#include <GL/gl.h>
@@ -16,7 +17,7 @@
 //#include <OpenGL/gl.h>
 //#include <OpenGL/glu.h>
 //#include <GLUT/GLUT.h>
-
+//
 //#include <OpenGL/gl.h>
 //#include <OpenGL/glu.h>
 
@@ -24,12 +25,14 @@
 #define TIMER_ID 0
 #define TIMER_INTERVAL 25
 #define MOVEMENTSPEED 0.4
-#define NUMOFBLOCKS 3
+#define NUMOFBLOCKS 7
 #define STARTSCROLLING 1
 #define BLUE 3
 #define YELLOW 2
 #define GREEN 0
 #define RED 1
+#define HEIGHT 740
+#define WIDTH 640
 
 
 struct point{
@@ -54,6 +57,9 @@ int globalScore = 0;
 bool bonusActivated = false;
 int bonusJumps = 0;
 int rotation = 0;
+bool isGameOver = false;
+int maxHeightIndex = NUMOFBLOCKS-1;
+float density = 0.6;
 
 static void onKeyboard(unsigned char key, int x, int y);
 static void onKeyboard2(unsigned char key, int x, int y);
@@ -91,7 +97,7 @@ int main(int argc, char **argv)
     glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE);
     
     //window create
-    glutInitWindowSize(640, 740);
+    glutInitWindowSize(WIDTH, HEIGHT);
     glutInitWindowPosition(350, 100);
     glutCreateWindow(argv[0]);
     
@@ -174,7 +180,11 @@ void jump(){
     if (currentY <= currentFloorCoord) {
         currentY = currentFloorCoord;
         //upspeed
-        vectorSpeedY = 1.2;
+        //printf("rot: %d\n", rotation);
+        if(rotation==31)
+            vectorSpeedY = 1.6;
+        else
+            vectorSpeedY = 1.2;
     }
     else{
         //downspeed
@@ -214,40 +224,43 @@ void generateRandBlockCoord(int x){
 
 
 void setNewBlockCoords(){
-    for(int i=0; i<NUMOFBLOCKS; i++){
-        if(blocks[i].currY<=-9){
-            blocks[i].currY = 10;
-            blocks[i].length = randBetween(2, 7);
-            blocks[i].currX = randBetween(-8.3, 8.3);
-            blocks[i].blockMode = getRandomBlock();
-            blocks[i].yOffset = 0;
-            if(blocks[i].blockMode==BLUE){
-                blocks[i].bonus = 5;
-            } else {
-                blocks[i].bonus = 1;
-            }
-            
-            
+    int minHeight = (maxHeightIndex+1)%NUMOFBLOCKS;
+    //printf("min height: %d\n", minHeight);
+    if(blocks[minHeight].currY<=-9){
+        blocks[minHeight].currY = blocks[maxHeightIndex].currY + randBetween(5, 7) * density;
+        blocks[minHeight].length = randBetween(2, 7);
+        blocks[minHeight].currX = randBetween(-8.3, 8.3);
+        blocks[minHeight].blockMode = getRandomBlock();
+        blocks[minHeight].yOffset = 0;
+        if(blocks[minHeight].blockMode==BLUE){
+            blocks[minHeight].bonus = 5;
+        } else if(blocks[minHeight].blockMode==RED){
+            blocks[minHeight].bonus = 2;
+        } else {
+            blocks[minHeight].bonus = 1;
         }
+        maxHeightIndex = minHeight;
     }
+    
 }
 
 
 void blockInit(){
+    int tmpY = 7;
     for(int i=0; i<NUMOFBLOCKS; i++){
         switch (i) {
             case 0:
                 blocks[i].currX = -5;
                 blocks[i].currY = -3;
                 blocks[i].length = 3;
-                blocks[i].blockMode = 1;
+                blocks[i].blockMode = RED;
                 blocks[i].bonus = 1;
                 break;
             case 1:
                 blocks[i].currX = 0;
                 blocks[i].currY = -8;
                 blocks[i].length = 11;
-                blocks[i].blockMode = 0;
+                blocks[i].blockMode = GREEN;
                 blocks[i].bonus = 0;
                 break;
             case 2:
@@ -257,6 +270,29 @@ void blockInit(){
                 blocks[i].blockMode = GREEN;
                 blocks[i].bonus = 1;
                 break;
+            case 3:
+                blocks[i].currX = 3;
+                blocks[i].currY = 7;
+                blocks[i].length = 4;
+                blocks[i].blockMode = BLUE;
+                blocks[i].bonus = 5;
+                break;
+        }
+        if(i>3){
+            tmpY += randBetween(5, 7);
+            blocks[i].currY = tmpY;
+            blocks[i].currX = randBetween(-8.3, 8.3);
+            blocks[i].blockMode = getRandomBlock();
+            blocks[i].length = randBetween(2, 7);
+            blocks[i].yOffset = 0;
+            if(blocks[i].blockMode==BLUE){
+                blocks[i].bonus = 5;
+            } else if(blocks[i].blockMode==RED) {
+                blocks[i].bonus = 2;
+            } else {
+                blocks[i].bonus = 1;
+            }
+            
         }
         blocks[i].yOffset=0;
         
@@ -302,25 +338,67 @@ void drawBlock(int index){
 }
 
 
-void scoreInit(){
-    strcpy(textScore,"Score: 0");
-    return;
-}
-
-void drawScore(){
-    float text_x = .73;
-    float text_y = 1.52;
-    float text_z = .3;
-    sprintf(textScore, "Score: %d", 123);
-    //RenderString(text_x, text_y, GLUT_BITMAP_HELVETICA_18, textScore, .6, .6, .6);
+void drawText(const char *text,int length , int x , int y) {
+    if(isGameOver){
+        text = "GAME OVER\0";
+        length = 19;
+        x = WIDTH/2;
+        y = HEIGHT/2;
+    }
+    if(globalScore==0){
+        text = "SCORE: 0\0";
+        length = 8;
+    }
+    if(bonusActivated){
+        text = "SCORE x 2: \0";
+        length = 10;
+    }
+    
+    
+    glMatrixMode(GL_PROJECTION);
+    double matrix[16];
+    glGetDoublev(GL_PROJECTION_MATRIX,matrix);
+    glLoadIdentity();
+    glOrtho(0,800,0,600,-5,5);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glPushMatrix();
+    glLoadIdentity();
+    glRasterPos2i(x,y);
+    
+    
+    for ( int i = 0 ; i < length ; i++)
+        glutBitmapCharacter( GLUT_BITMAP_HELVETICA_18,(int)text[i]);
+    
+    //score
+    int nDigits = floor(log10(abs(globalScore))) + 1;
+    char str[20];
+    sprintf(str, "%d", globalScore);
+    
+    if(!isGameOver){
+        for ( int i = 0 ; i < nDigits ; i++)
+            glutBitmapCharacter( GLUT_BITMAP_HELVETICA_18,(int)str[i]);
+    } else {
+        char *finalStr = "final score: ";
+        glRasterPos2i(x,y-15);
+        for ( int i = 0 ; i < strlen(finalStr) ; i++)
+            glutBitmapCharacter( GLUT_BITMAP_HELVETICA_18,(int)finalStr[i]);
+        for ( int i = 0 ; i < nDigits ; i++)
+            glutBitmapCharacter( GLUT_BITMAP_HELVETICA_18,(int)str[i]);
+    }
+    
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixd(matrix);
+    glMatrixMode(GL_MODELVIEW);
 }
 
 void gameOver(){
     animation_ongoing = 0;
     glClearColor(1.0f, 0.4f, 0.3f, 1.0f );
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    drawScore();
-    
+    //drawText("GAME OVER", 9, 0, 0);
+    isGameOver = true;
     printf("GAME OVER\n");
 }
 
@@ -340,7 +418,7 @@ void rotationIncrement(){
     if(rotation>0 && rotation<360){
         rotation += 30;
     }
-    if(rotation==360){
+    if(rotation>=360){
         rotation = 0;
     }
 }
@@ -370,7 +448,7 @@ void checkColision(int index){
                 bonusJumps = 5;
             } else if(blocks[index].blockMode == BLUE){
                 //blue boost block
-                currentFloorCoord = blockY+5.8;
+                currentFloorCoord = blockY+0.8;
                 rotation = 1;
                 
             } else {
@@ -449,13 +527,17 @@ void pickColor(bool x){
 }
 
 void restartGame(){
-    blockInit();
+    
     currentX = 0;
     currentY = 0;
     globalScore = 0;
     moveWorld = false;
     bonusActivated = false;
     pickColor(false);
+    density = 0.6;
+    isGameOver = false;
+    blockInit();
+    maxHeightIndex = NUMOFBLOCKS-1;
     printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNEW GAME: ");
 }
 
@@ -513,6 +595,18 @@ static void onKeyboard(unsigned char key, int x, int y)
     }
 }
 
+void decreaseDensity(){
+    if(globalScore>50){
+        density = 0.7;
+    } else if(globalScore>100){
+        density = 0.8;
+    } else if(globalScore>150){
+        density = 0.9;
+    } else if(globalScore>200){
+        density = 1;
+    }
+}
+
 static void on_timer(int value)
 {
     
@@ -521,6 +615,7 @@ static void on_timer(int value)
     
     jump();
     throughWall();
+    decreaseDensity();
     
     if(currentY<-15){
         gameOver();
@@ -634,6 +729,8 @@ static void on_display(void)
     //drawImage();
     
     drawAllTheBlocks();
+    drawText("SCORE: ", 10, 1, 1);
+    
     glFlush();
     glutSwapBuffers();
 }
