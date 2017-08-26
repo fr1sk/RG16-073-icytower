@@ -6,7 +6,7 @@
 #include <time.h>
 #include <string.h>
 //#include <GLUT/glut.h> //   *** DISABLE THIS LINE FOR LINUX ***
-#include <GL/glut.h>      *** ENABLE THIS LINE FOR LINUX ***
+#include <GL/glut.h>     //   *** ENABLE THIS LINE FOR LINUX ***
 #include <stdio.h>
 #include <math.h>
 
@@ -340,16 +340,16 @@ void drawBlock(int index){
 
 void drawText(const char *text,int length , int x , int y) {
     if(isGameOver){
-        text = "GAME OVER\0";
-        length = 19;
+        text = "GAME OVER \0";
+        length = 10;
         x = WIDTH/2;
         y = HEIGHT/2;
     }
-    if(globalScore==0){
+    if(globalScore==0 && !isGameOver){
         text = "SCORE: 0\0";
         length = 8;
     }
-    if(bonusActivated){
+    if(bonusActivated && !isGameOver){
         text = "SCORE x 2: \0";
         length = 10;
     }
@@ -729,7 +729,7 @@ static void on_display(void)
     //drawImage();
     
     drawAllTheBlocks();
-    drawText("SCORE: ", 10, 1, 1);
+    drawText("SCORE: \0", 10, 1, 1);
     
     glFlush();
     glutSwapBuffers();
