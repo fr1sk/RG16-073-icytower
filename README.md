@@ -44,6 +44,6 @@
 ***
 :space_invader: Gameplay v0.5 :space_invader:
 
-![alt tag](https://raw.githubusercontent.com/MATF-RG16/RG16-073-icytower/master/screenshoots/BouncyTowerV05.gif)
+![alt tag](https://raw.githubusercontent.com/MATF-RG16/RG16-073-icytower/master/screenshoots/BouncyTowerV06.gif)
 
-for older versions check wiki/reviews
+for older versions and dev notes check wiki/reviews
