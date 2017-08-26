@@ -51,7 +51,7 @@
 
 
 ***
-:space_invader: Gameplay v0.6 :space_invader:
+:space_invader: Gameplay v0.6 (final version) :space_invader:
 
 ![alt tag](https://raw.githubusercontent.com/MATF-RG16/RG16-073-icytower/master/screenshoots/BouncyTowerV06.gif)
 
