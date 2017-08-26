@@ -39,10 +39,19 @@
 | l      | change color      |
 | r      | restart game   |
 
+***
+🕹 In-game info 🕹
+
+|👾| Color        | Block           | Points       |
+|:-------------:|:-------------:|:-------------:|:-------------:|
+|👹| RED      | falling (be careful) | +2  |
+|🍏| GREEN      | standard    | +1 |
+|🌀| BLUE      | boost (higher jump)     | +5 |
+|⭐️| YELLOW      | x2 score next 5 jumps  | +1 |
 
 
 ***
-:space_invader: Gameplay v0.5 :space_invader:
+:space_invader: Gameplay v0.6 :space_invader:
 
 ![alt tag](https://raw.githubusercontent.com/MATF-RG16/RG16-073-icytower/master/screenshoots/BouncyTowerV06.gif)
 
