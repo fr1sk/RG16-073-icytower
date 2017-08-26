@@ -5,22 +5,10 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
-//#include <GLUT/glut.h> //   *** DISABLE THIS LINE FOR LINUX ***
-#include <GL/glut.h>     //   *** ENABLE THIS LINE FOR LINUX ***
+//#include <GLUT/glut.h>    //   *** DISABLE THIS LINE FOR LINUX ***
+#include <GL/glut.h>    //  *** ENABLE THIS LINE FOR LINUX ***
 #include <stdio.h>
 #include <math.h>
-
-//#include <freeglut.h>
-//#include <GL/gl.h>
-//#include <GL/glut.h>
-
-//#include <OpenGL/gl.h>
-//#include <OpenGL/glu.h>
-//#include <GLUT/GLUT.h>
-//
-//#include <OpenGL/gl.h>
-//#include <OpenGL/glu.h>
-
 
 #define TIMER_ID 0
 #define TIMER_INTERVAL 25
@@ -34,11 +22,9 @@
 #define HEIGHT 740
 #define WIDTH 640
 
-
 struct point{
     int x,y;
 };
-
 
 static float currentX, currentY;    //current object coordinates
 static float currentFloorCoord = -6; //current floor Y coordinate
@@ -61,6 +47,7 @@ bool isGameOver = false;
 int maxHeightIndex = NUMOFBLOCKS-1;
 float density = 0.6;
 
+//two keyboard funcs instead of one to fix glitchy movement
 static void onKeyboard(unsigned char key, int x, int y);
 static void onKeyboard2(unsigned char key, int x, int y);
 
@@ -83,12 +70,10 @@ typedef struct {
 } RGB;
 
 
-
 Block blocks[NUMOFBLOCKS];
 void pickColor(bool x);
 void drawAllTheBlocks();
 void blockInit();
-
 
 int main(int argc, char **argv)
 {
@@ -120,42 +105,33 @@ int main(int argc, char **argv)
     return 0;
 }
 
-
-
-
+//func that returns float between two numbers
 float randBetween(float min, float max){
-    //r = (rand() % (max + 1 - min)) + min
     float r = (rand() % (int)(max+1-min)) + min;
     //printf("RAND %lf", r);
     return r;
 }
 
+//func for getting new spawning block, most chace have GREEN then RED then BLUE then YELLOW
 int getRandomBlock(){
     int x = randBetween(0, 100);
     //printf("RANDOM: %d\n", x);
     
     if(x<40){
-        return 0;
+        return GREEN;
     } else if(x>=40 && x<75){
-        return 1;
+        return RED;
     } else if(x>=75 && x<90){
-        return 3;
+        return BLUE;
     } else {
-        return 2;
+        return YELLOW;
     }
 }
 
+//rand func used to get new color on keypress
 int myRandom(int m) {
     return rand()%m;
-    
 }
-// void test(){
-//     currentX = -(1 - size / 2) + (2 - size);
-//     currentY = -(1 - size / 2) + (2 - size);
-//
-//     vectorSpeedX = -size / 2 + size * MOVEMENTSPEED;
-//     vectorSpeedY = -size / 2 + size * MOVEMENTSPEED;
-// }
 
 void moveLeft(){
     currentX -= MOVEMENTSPEED;
@@ -167,6 +143,7 @@ void moveRight(){
     //printf("\td - move right\n");
 }
 
+//we move world instead of camera
 void startMovingWorld(){
     worldMovementSpeed = 0.1;
     moveWorld = true;
@@ -198,6 +175,7 @@ void jump(){
     currentY += vectorSpeedY;
 }
 
+//func that allows moving trough walls
 void throughWall(){
     if(currentX < -borderTrough){
         currentX = borderTrough;
@@ -208,21 +186,7 @@ void throughWall(){
     }
 }
 
-//void drawPlatform(){
-//#define glutCube glutWireCube
-//    glPushMatrix();
-//    glScalef(0.2, 1, 1);
-//    glutCube(1);
-//    glPopMatrix();
-//#undef glutCube
-//}
-
-void generateRandBlockCoord(int x){
-    float blockY = randBetween(3.2,7.1);
-    float blockX = randBetween(-8.0, 8.0);
-}
-
-
+//setting coordinates for new block that falls from top
 void setNewBlockCoords(){
     int minHeight = (maxHeightIndex+1)%NUMOFBLOCKS;
     //printf("min height: %d\n", minHeight);
@@ -241,10 +205,9 @@ void setNewBlockCoords(){
         }
         maxHeightIndex = minHeight;
     }
-    
 }
 
-
+//initialisation function for blocks (first 4 are always same, to prevent cheating (r - to restart) and rest of them are random)
 void blockInit(){
     int tmpY = 7;
     for(int i=0; i<NUMOFBLOCKS; i++){
@@ -295,11 +258,11 @@ void blockInit(){
             
         }
         blocks[i].yOffset=0;
-        
     }
     
 }
 
+//function for drawing different block types (different colors)
 void drawBlock(int index){
     GLfloat diffuse_coeffs[4];
     if(blocks[index].blockMode==1){
@@ -337,7 +300,7 @@ void drawBlock(int index){
     glutPostRedisplay();
 }
 
-
+//function for all text used in game
 void drawText(const char *text,int length , int x , int y) {
     if(isGameOver){
         text = "GAME OVER \0";
@@ -366,7 +329,6 @@ void drawText(const char *text,int length , int x , int y) {
     glLoadIdentity();
     glRasterPos2i(x,y);
     
-    
     for ( int i = 0 ; i < length ; i++)
         glutBitmapCharacter( GLUT_BITMAP_HELVETICA_18,(int)text[i]);
     
@@ -393,11 +355,11 @@ void drawText(const char *text,int length , int x , int y) {
     glMatrixMode(GL_MODELVIEW);
 }
 
+//this function is called when player dies
 void gameOver(){
     animation_ongoing = 0;
     glClearColor(1.0f, 0.4f, 0.3f, 1.0f );
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    //drawText("GAME OVER", 9, 0, 0);
     isGameOver = true;
     printf("GAME OVER\n");
 }
@@ -408,12 +370,14 @@ void drawAllTheBlocks(){
     }
 }
 
+//if player jumps on RED block remove it right after
 void removeIfBreakable(index){
-    if(blocks[index].blockMode==1 && blocks[index].yOffset < 0){
+    if(blocks[index].blockMode==RED && blocks[index].yOffset < 0){
         blocks[index].yOffset += -0.5;
     }
 }
 
+//function for rotating player after jumping on BLUE block
 void rotationIncrement(){
     if(rotation>0 && rotation<360){
         rotation += 30;
@@ -423,6 +387,7 @@ void rotationIncrement(){
     }
 }
 
+//colision function, that regulates all ingame colision
 void checkColision(int index){
     if(vectorSpeedY>=0){
         return;
@@ -431,10 +396,8 @@ void checkColision(int index){
     float blockY = blocks[index].currY+0.1;
     float blockX = blocks[index].currX;
     float blockLen = blocks[index].length/2;
-    //currentFloorCoord = -10;
-    //printf("blockX=%lf  currentX=%lf\n", blockX, currentX);
-    //printf("blockY=%lf  currentY=%lf offset=%lf\n", blockY, currentY, blocks[index].yOffset);
-    if(localCurrY <= blockY && localCurrY >= blockY-1){ //1.5 instead of 1
+    
+    if(localCurrY <= blockY && localCurrY >= blockY-1){
         if(currentX >= blockX-blockLen && currentX <= blockX+blockLen){
             if(blocks[index].blockMode==RED){
                 //red falling block
@@ -450,7 +413,6 @@ void checkColision(int index){
                 //blue boost block
                 currentFloorCoord = blockY+0.8;
                 rotation = 1;
-                
             } else {
                 currentFloorCoord = blockY+0.8;
             }
@@ -463,13 +425,11 @@ void checkColision(int index){
                     bonusActivated = false;
                     globalScore += blocks[index].bonus;
                 }
-                
             } else {
                 globalScore +=  blocks[index].bonus;
             }
             blocks[index].bonus = 0;
             printf("SCORE: %d\n", globalScore);
-            
         }
     }
 }
@@ -482,8 +442,8 @@ static void onKeyboard2(unsigned char key, int x, int y){
     }
 }
 
+//player initialisation
 void drawPlayer(){
-    //jumping cube
     GLfloat diffuse_coeffs[4];
     if(bonusActivated){
         diffuse_coeffs[0] = 1;
@@ -497,25 +457,18 @@ void drawPlayer(){
         diffuse_coeffs[3] = 1;
     }
     glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse_coeffs);
-    
-    
     glPushMatrix();
-    
     glTranslatef(currentX,currentY,0);
     glRotatef(rotation,0.0,0.0,1.0);
-    
     glColor3ub(255, 193, 7);
     glScalef(1,1,1);
-    
     glutSolidCube(1);
-    
-    
     glPopMatrix();
-    //end for jumping cube
 }
 
+
+//func for getting new background color after player dies
 void pickColor(bool x){
-    //139 194 74
     RGB wallColors[] = {{0,0.6,0.544},{0.42,0.27,0.75},{1,0.61,0},{0.583,0.799,.31},{0,0.76,0.851}};
     RGB currentWall;
     if(x){
@@ -526,8 +479,8 @@ void pickColor(bool x){
     glClearColor(currentWall.r, currentWall.g, currentWall.b, 0);
 }
 
+//this func is called when u press "R"
 void restartGame(){
-    
     currentX = 0;
     currentY = 0;
     globalScore = 0;
@@ -540,6 +493,8 @@ void restartGame(){
     maxHeightIndex = NUMOFBLOCKS-1;
     printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNEW GAME: ");
 }
+
+
 
 static void onKeyboard(unsigned char key, int x, int y)
 {
@@ -595,6 +550,7 @@ static void onKeyboard(unsigned char key, int x, int y)
     }
 }
 
+//function that decreases density of blocks when you score is higher to make game harder
 void decreaseDensity(){
     if(globalScore>50){
         density = 0.7;
@@ -607,9 +563,7 @@ void decreaseDensity(){
     }
 }
 
-static void on_timer(int value)
-{
-    
+static void on_timer(int value){
     if (value != TIMER_ID)
         return;
     
@@ -621,8 +575,6 @@ static void on_timer(int value)
         gameOver();
     }
     
-    
-    
     //printf("x=%f  y=%f\n",currentX, currentY);
     if(left){
         moveLeft();
@@ -631,11 +583,6 @@ static void on_timer(int value)
     if(right){
         moveRight();
     }
-    
-    
-    
-    
-    //currentFloorCoord = (haveFloor ? -6 : -100);
     currentFloorCoord = -50;
     for(int i=0; i<NUMOFBLOCKS; i++){
         
@@ -674,9 +621,7 @@ static void on_timer(int value)
 
 
 
-static void on_display(void)
-{
-    //start for jumping cube
+static void on_display(void){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     glMatrixMode(GL_MODELVIEW);
@@ -704,29 +649,13 @@ static void on_display(void)
     glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_coeffs);
     glMaterialfv(GL_FRONT, GL_SPECULAR, specular_coeffs);
     glMaterialf(GL_FRONT, GL_SHININESS, shininess);
-    //lights
     
     gluLookAt(15,0,0,0,0,0,0,1,0);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluPerspective(60, 1, 1, 100);
     
-    
     drawPlayer();
-    
-    //start for floor
-    //glPushMatrix();
-    //glTranslatef(0, -8, 0);
-    //glColor3ub(11, 11, 11);
-    //glScalef(20,1,1);
-    
-    //glutWireCube(1);
-    //glPopMatrix();
-    //end for floor
-    
-    
-    //blockInit();
-    //drawImage();
     
     drawAllTheBlocks();
     drawText("SCORE: \0", 10, 1, 1);
